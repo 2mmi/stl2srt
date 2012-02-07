@@ -176,12 +176,12 @@ class STL:
     TTIfields = 'SGN SN EBN CS TCIh TCIm TCIs TCIf TCOh TCOm TCOs TCOf VP JC CF TF'.split(' ')
 
 
-    def __init__(self, pathOrFile):
+    def __init__(self, pathOrFile, offset):
+        self.offset = float(offset)/1000
         if isinstance(pathOrFile, file):
             self.file = pathOrFile
         else:
             self.file = open(pathOrFile, 'rb')
-
         self._readGSI()
 
     def _readGSI(self):
@@ -211,7 +211,7 @@ class STL:
             int(GSI['TCF'][2:4]),
             int(GSI['TCF'][4:6]),
             int(GSI['TCF'][6:8])
-        )
+        ) - self.offset
         logging.debug(self.__dict__)
 
     def __timecodeDecode(self, h, m, s, f):
@@ -257,16 +257,15 @@ if __name__ == '__main__':
 
     parser = OptionParser(usage = 'usage: %prog [options] input output')
     parser.add_option('-d', '--debug', dest='debug_level', action='store_const', const=logging.DEBUG, default=logging.ERROR)
-
+    parser.add_option('-o', '--offset', dest='offset', help='start offset in milliseconds', default=0)
     (options, args) = parser.parse_args()
-
     if len(args) != 2:
         parser.print_help()
         sys.exit(1)
 
     logging.basicConfig(level=options.debug_level)
 
-    stl = STL(args[0])
+    stl = STL(args[0], int(options.offset))
     c = SRT(args[1])
     for sub in stl:
         (tci, tco, txt) = sub
